@@ -6,7 +6,7 @@ Projeto desenvolvido como parte do Projeto Final de Curso de Engenharia de Softw
 
 O sistema tem como objetivo auxiliar professores na identificação de dificuldades de aprendizagem dos alunos por meio da análise de desempenho em competências específicas.
 
-Inicialmente, o projeto terá foco na disciplina de Matemática, podendo futuramente ser adaptado para outras disciplinas.
+O projeto terá foco na disciplina de Matemática, podendo futuramente ser adaptado para outras disciplinas.
 
 # Tecnologias previstas
 
