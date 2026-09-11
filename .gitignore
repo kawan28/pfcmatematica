@@ -1,0 +1,13 @@
+# Bibliotecas instaladas pelo npm
+node_modules/
+
+# Arquivos com variáveis de ambiente e senhas
+.env
+.env.*
+!.env.example
+
+# Arquivos gerados na compilação
+dist/
+
+# Logs
+*.log
