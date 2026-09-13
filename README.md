@@ -60,15 +60,7 @@ npm ci
 npm run dev
 
 
-5. Abrir o endereço indicado pelo Vite, normalmente
+5. Abrir o endereço
    `http://localhost:5173`.
 
 Os dois terminais precisam continuar rodando.
-
-# Testes realizados
-
-Foram testados o cadastro pela tela, o cálculo do percentual,
-a consulta dos registros e a recusa de acertos acima do total
-de questões. Os dados continuaram salvos mesmo após reiniciar o servidor.
-
-O build do frontend também foi executado sem erros.
