@@ -20,4 +20,49 @@ model Desempenho {
   acertos       Int
   meta          Int
   criadoEm      DateTime @default(now())
+  professorId Int?
+  alunoId     Int?
+}
+
+// Define os perfis de acesso do sistema.
+enum Perfil {
+  PROFESSOR
+  ALUNO
+}
+
+// Guarda os dados usados no login.
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  senhaHash String
+  perfil    Perfil   @default(ALUNO)
+  criadoEm  DateTime @default(now())
+
+  trocarSenha Boolean @default(false)
+
+  versaoToken Int @default(0)
+
+  recuperacaoTokenHash String?   @unique
+recuperacaoExpiraEm  DateTime?
+
+  // Ficam vazios até o usuário aceitar os termos.
+  termosAceitosEm DateTime?
+  versaoTermos    String?
+
+  // Liga o aluno ao professor responsável.
+  professorId Int?
+  professor   Usuario?  @relation("ProfessorAlunos", fields: [professorId], references: [id])
+  alunos      Usuario[] @relation("ProfessorAlunos")
+}
+// Registra as ações realizadas no sistema.
+model LogAuditoria {
+  id        Int      @id @default(autoincrement())
+  usuarioId Int
+  acao      String
+  alvoId    Int?
+  criadoEm  DateTime @default(now())
+
+  // Facilita a consulta das ações de cada usuário por data.
+  @@index([usuarioId, criadoEm])
 }

@@ -1,244 +1,306 @@
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import { useState } from "react";
+import Login from "./Login";
+import type { Usuario } from "./Login";
+import TrocarSenha from "./TrocarSenha";
+import Termos from "./Termos";
+import EsqueciSenha from "./EsqueciSenha";
+import RecuperarSenha from "./RecuperarSenha";
+import ListaDesempenhos from "./ListaDesempenhos";
+import CadastrarProfessor from "./CadastrarProfessor";
+import PainelProfessor from "./PainelProfessor";
 
-type Desempenho = {
-  id: number;
-  aluno: string;
-  competencia: string;
-  totalQuestoes: number;
-  acertos: number;
-  meta: number;
-  percentual: number;
-  classificacao: string;
+
+type Sessao = {
+  token: string;
+  usuario: Usuario;
+  senhaProvisoria: string;
 };
 
 export default function App() {
-  const [aluno, setAluno] = useState("");
-  const [competencia, setCompetencia] = useState("");
-  const [totalQuestoes, setTotalQuestoes] = useState("");
-  const [acertos, setAcertos] = useState("");
-  const [meta, setMeta] = useState(() => {
-  return localStorage.getItem("pfc_meta") ?? "70";
-});
+  const [sessao, setSessao] = useState<Sessao | null>(null);
+  const [aviso, setAviso] = useState(() => {
+  const parametros = new URLSearchParams(window.location.search);
 
-  const [desempenhos, setDesempenhos] = useState<Desempenho[]>([]);
-  const [mensagem, setMensagem] = useState("");
-  const [erro, setErro] = useState("");
-  const [salvando, setSalvando] = useState(false);
-  const [carregando, setCarregando] = useState(true);
-    
-   useEffect(() => {
-    const valor = Number(meta);
-
-    if (
-      meta.trim() !== "" &&
-      Number.isInteger(valor) &&
-      valor >= 0 &&
-      valor <= 100
-    ) {
-      localStorage.setItem("pfc_meta", meta);
-    }
-  }, [meta]);
-
-
-  async function carregarDesempenhos() {
-    setCarregando(true);
-
-    try {
-      const resposta = await fetch("/api/desempenhos");
-
-      if (!resposta.ok) {
-        throw new Error("Não foi possível carregar os desempenhos.");
-      }
-
-      const dados: Desempenho[] = await resposta.json();
-      setDesempenhos(dados);
-    } catch {
-      setErro("Não foi possível carregar os registros. Confira o backend.");
-    } finally {
-      setCarregando(false);
-    }
+  if (parametros.get("senhaRecuperada") === "1") {
+    return "Senha alterada com sucesso! Entre com sua nova senha.";
   }
 
-  useEffect(() => {
-    void carregarDesempenhos();
-  }, []);
+  return "";
+});
+  const [recuperandoSenha, setRecuperandoSenha] = useState(false);
+  const [cadastrandoProfessor, setCadastrandoProfessor] = useState(false);
+  const [linkRecuperacao, setLinkRecuperacao] = useState(() => {
+  return window.location.pathname === "/recuperar-senha";
+});
 
-  async function cadastrar(evento: FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
+const [tokenRecuperacao] = useState(() => {
+  const parametros = new URLSearchParams(window.location.search);
+  return parametros.get("token") ?? "";
+});
 
-    setMensagem("");
+  const [documento, setDocumento] = useState<
+    "termos" | "privacidade" | null
+  >(null);
+
+  const [aceito, setAceito] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  function entrar(
+    token: string,
+    usuario: Usuario,
+    senhaDigitada: string
+  ) {
+    setAviso("");
     setErro("");
+    setAceito(false);
 
-    if (!aluno.trim() || !competencia.trim()) {
-      setErro("Preencha o aluno e a competência.");
+    let senhaProvisoria = "";
+
+    if (usuario.trocarSenha) {
+      senhaProvisoria = senhaDigitada;
+    }
+
+    setSessao({
+      token: token,
+      usuario: usuario,
+      senhaProvisoria: senhaProvisoria,
+    });
+  }
+
+  function sair() {
+    setSessao(null);
+    setAceito(false);
+    setErro("");
+    setAviso("");
+    setDocumento(null);
+  }
+
+  async function aceitarTermos() {
+    if (!sessao || salvando) {
       return;
     }
 
+    if (!aceito) {
+      setErro("Marque a confirmação de leitura e aceite.");
+      return;
+    }
+
+    setErro("");
     setSalvando(true);
 
     try {
-      const resposta = await fetch("/api/desempenhos", {
+      const resposta = await fetch("/api/termos/aceitar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: "Bearer " + sessao.token,
         },
         body: JSON.stringify({
-          aluno: aluno.trim(),
-          competencia: competencia.trim(),
-          totalQuestoes: Number(totalQuestoes),
-          acertos: Number(acertos),
-          meta: Number(meta),
+          aceito: true,
+          versao: "1.0",
         }),
       });
 
-      if (!resposta.ok) {
-        const dados = await resposta.json();
+      const dados = await resposta.json();
 
-        throw new Error(
-          dados.mensagem ?? "Não foi possível salvar o desempenho."
-        );
+      if (!resposta.ok) {
+        setErro(dados.mensagem ?? "Não foi possível registrar o aceite.");
+        return;
       }
 
-      setMensagem("Desempenho registrado com sucesso!");
-      setAluno("");
-      setCompetencia("");
-      setTotalQuestoes("");
-      setAcertos("");
+      setSessao({
+        ...sessao,
+        usuario: {
+          ...sessao.usuario,
+          termosAceitosEm: new Date().toISOString(),
+          versaoTermos: dados.versao,
+        },
+      });
 
-      await carregarDesempenhos();
-    } catch (erro) {
-      setErro(
-        erro instanceof Error
-          ? erro.message
-          : "Não foi possível conectar ao servidor."
-      );
+      setAviso("Aceite registrado com sucesso.");
+    } catch {
+      setErro("Não foi possível conectar ao servidor.");
     } finally {
       setSalvando(false);
     }
   }
 
+  let precisaAceitar = false;
+
+  if (sessao) {
+    precisaAceitar =
+      !sessao.usuario.termosAceitosEm ||
+      sessao.usuario.versaoTermos !== "1.0";
+  }
+
   return (
     <main>
-      <h1>Desempenho em Matemática</h1>
-      <p>Registre os resultados e acompanhe o desempenho por competência.</p>
+      <h1>Radar da Matemática</h1>
 
-      <h2>Registrar desempenho</h2>
+      <nav aria-label="Termos e privacidade">
+  <button
+    type="button"
+    onClick={() => setDocumento("termos")}
+  >
+    Termos e Política de Privacidade
+  </button>
+</nav>
 
-      <form onSubmit={cadastrar}>
-        <fieldset disabled={salvando}>
-          <legend>Dados da avaliação</legend>
+{documento !== null && (
+  <section>
+    <Termos documento="termos" />
+
+    <hr />
+
+    <Termos documento="privacidade" />
+
+    <button
+      type="button"
+      onClick={() => setDocumento(null)}
+    >
+      Fechar
+    </button>
+  </section>
+)}
+
+      {aviso && <p role="status">{aviso}</p>}
+
+      {linkRecuperacao ? (
+  <RecuperarSenha
+    token={tokenRecuperacao}
+    aoVoltar={() => {
+      window.history.replaceState(null, "", "/");
+      setLinkRecuperacao(false);
+      setRecuperandoSenha(false);
+      setSessao(null);
+      setAviso("");
+      setErro("");
+      setAceito(false);
+    }}
+  />
+
+) : !sessao ? (
+  cadastrandoProfessor ? (
+    <CadastrarProfessor
+      aoConcluir={() => {
+        setCadastrandoProfessor(false);
+        setRecuperandoSenha(false);
+        setAviso("Conta criada com sucesso! Entre com seu e-mail e senha.");
+      }}
+      aoVoltar={() => {
+        setCadastrandoProfessor(false);
+        setAviso("");
+      }}
+    />
+  ) : recuperandoSenha ? (
+    <EsqueciSenha
+      aoVoltar={() => setRecuperandoSenha(false)}
+    />
+  ) : (
+    <>
+      <Login aoEntrar={entrar} />
+      <p>
+  <button
+    type="button"
+    onClick={() => {
+      setAviso("");
+      setRecuperandoSenha(false);
+      setCadastrandoProfessor(true);
+    }}
+  >
+    Criar conta de professor
+  </button>
+</p>
+
+      <p>
+        <button
+          type="button"
+          onClick={() => {
+            setAviso("");
+            setRecuperandoSenha(true);
+          }}
+        >
+          Esqueci minha senha
+        </button>
+      </p>
+    </>
+  )
+) : (
+        <>
+          <h2>Olá, {sessao.usuario.nome}!</h2>
+
+          {sessao.usuario.trocarSenha ? (
+            <TrocarSenha
+              token={sessao.token}
+              senhaProvisoria={sessao.senhaProvisoria}
+              aoConcluir={() => {
+                setSessao(null);
+                setAceito(false);
+                setErro("");
+                setAviso(
+                  "Senha alterada! Entre novamente com sua nova senha."
+                );
+              }}
+            />
+          ) : precisaAceitar ? (
+            <section>
+              <h3>Leia os documentos para continuar</h3>
+
+              <p>
+                
+                Leia os documentos pelo botão “Termos e Política de
+                Privacidade” acima. Depois, confirme abaixo.
+                
+              </p>
+
+              <label>
+                <input
+                  type="checkbox"
+                  checked={aceito}
+                  disabled={salvando}
+                  onChange={(evento) => {
+                    setAceito(evento.target.checked);
+                  }}
+                  style={{ width: "auto", marginRight: "8px" }}
+                />
+                Li e aceito o Termo de Aceite e declaro ter lido
+                a Política de Privacidade.
+              </label>
+
+              <p>
+                <button
+                  type="button"
+                  disabled={!aceito || salvando}
+                  onClick={aceitarTermos}
+                >
+                  {salvando ? "Salvando..." : "Aceitar e continuar"}
+                </button>
+              </p>
+
+              {erro && <p role="alert">{erro}</p>}
+            </section>
+          ) : (
+            <section>
+          {sessao.usuario.perfil === "PROFESSOR" ? (
+          <PainelProfessor token={sessao.token} />
+        ) : (
+          <ListaDesempenhos token={sessao.token} />
+    )}
+
+            </section>
+          )}
 
           <p>
-            <label htmlFor="aluno">Identificação do aluno</label>
-            <br />
-            <input
-              id="aluno"
-              value={aluno}
-              onChange={(evento) => setAluno(evento.target.value)}
-              required
-            />
+            <button
+              type="button"
+              onClick={sair}
+              disabled={salvando}
+            >
+              Sair
+            </button>
           </p>
-
-          <p>
-            <label htmlFor="competencia">Competência</label>
-            <br />
-            <input
-              id="competencia"
-              value={competencia}
-              onChange={(evento) => setCompetencia(evento.target.value)}
-              required
-            />
-          </p>
-
-          <p>
-            <label htmlFor="totalQuestoes">Total de questões</label>
-            <br />
-            <input
-              id="totalQuestoes"
-              type="number"
-              min="1"
-              step="1"
-              value={totalQuestoes}
-              onChange={(evento) => setTotalQuestoes(evento.target.value)}
-              required
-            />
-          </p>
-
-          <p>
-            <label htmlFor="acertos">Acertos</label>
-            <br />
-            <input
-              id="acertos"
-              type="number"
-              min="0"
-              max={totalQuestoes === "" ? undefined : Number(totalQuestoes)}
-              step="1"
-              value={acertos}
-              onChange={(evento) => setAcertos(evento.target.value)}
-              required
-            />
-          </p>
-
-          <p>
-            <label htmlFor="meta">Meta (%)</label>
-            <br />
-            <input
-              id="meta"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              value={meta}
-              onChange={(evento) => setMeta(evento.target.value)}
-              required
-            />
-          </p>
-
-          <button type="submit">
-            {salvando ? "Salvando..." : "Salvar desempenho"}
-          </button>
-        </fieldset>
-      </form>
-
-      {mensagem && <p role="status">{mensagem}</p>}
-      {erro && <p role="alert">{erro}</p>}
-
-      <h2>Resultados registrados</h2>
-
-      {carregando ? (
-        <p>Carregando resultados...</p>
-      ) : desempenhos.length === 0 ? (
-        <p>Nenhum resultado para exibir.</p>
-      ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Aluno</th>
-                <th>Competência</th>
-                <th>Acertos / Total</th>
-                <th>Percentual</th>
-                <th>Meta</th>
-                <th>Classificação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {desempenhos.map((desempenho) => (
-                <tr key={desempenho.id}>
-                  <td>{desempenho.aluno}</td>
-                  <td>{desempenho.competencia}</td>
-                  <td>
-                    {desempenho.acertos} / {desempenho.totalQuestoes}
-                  </td>
-                  <td>{desempenho.percentual}%</td>
-                  <td>{desempenho.meta}%</td>
-                  <td>{desempenho.classificacao}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        </>
       )}
     </main>
   );
