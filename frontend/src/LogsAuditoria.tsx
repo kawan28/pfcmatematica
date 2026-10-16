@@ -5,6 +5,7 @@ type Log = {
   usuarioId: number;
   acao: string;
   alvoId: number | null;
+  alvoNome: string | null;
   criadoEm: string;
 };
 
@@ -71,7 +72,7 @@ export default function LogsAuditoria({
               <tr>
                 <th>Registro</th>
                 <th>Ação</th>
-                <th>ID relacionado</th>
+                <th>Relacionado a</th>
                 <th>Data e hora</th>
               </tr>
             </thead>
@@ -81,7 +82,7 @@ export default function LogsAuditoria({
                 <tr key={log.id}>
                   <td>{log.id}</td>
                   <td>{log.acao}</td>
-                  <td>{log.alvoId ?? "—"}</td>
+                  <td>{log.alvoNome ?? "—"}</td>
                   <td>
                     {new Date(log.criadoEm).toLocaleString("pt-BR")}
                   </td>
