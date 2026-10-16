@@ -1,5 +1,6 @@
 import { useState } from "react";
 import CadastrarAluno from "./CadastrarAluno";
+import ListaAlunos from "./ListaAlunos";
 import RegistrarDesempenho from "./RegistrarDesempenho";
 import ListaDesempenhos from "./ListaDesempenhos";
 import LogsAuditoria from "./LogsAuditoria";
@@ -14,6 +15,7 @@ export default function PainelProfessor({
   const [pagina, setPagina] = useState<
     "alunos" | "desempenhos" | "logs"
   >("desempenhos");
+  const [versaoAlunos, setVersaoAlunos] = useState(0);
 
   return (
     <section>
@@ -52,7 +54,11 @@ export default function PainelProfessor({
       </nav>
 
       <div hidden={pagina !== "alunos"}>
-        <CadastrarAluno token={token} />
+        <CadastrarAluno
+          token={token}
+          aoCadastrar={() => setVersaoAlunos((versao) => versao + 1)}
+        />
+        <ListaAlunos token={token} versao={versaoAlunos} />
       </div>
 
       <div hidden={pagina !== "desempenhos"}>

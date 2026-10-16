@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 
 type CadastrarAlunoProps = {
   token: string;
+  aoCadastrar?: () => void;
 };
 
 type AcessoCriado = {
@@ -13,6 +14,7 @@ type AcessoCriado = {
 
 export default function CadastrarAluno({
   token,
+  aoCadastrar,
 }: CadastrarAlunoProps) {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -55,6 +57,7 @@ export default function CadastrarAluno({
 
       setNome("");
       setEmail("");
+      aoCadastrar?.();
     } catch {
       setErro("Não foi possível conectar ao servidor.");
     } finally {

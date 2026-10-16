@@ -8,6 +8,8 @@ import RecuperarSenha from "./RecuperarSenha";
 import ListaDesempenhos from "./ListaDesempenhos";
 import CadastrarProfessor from "./CadastrarProfessor";
 import PainelProfessor from "./PainelProfessor";
+import LogsAuditoria from "./LogsAuditoria";
+import ExcluirConta from "./ExcluirConta";
 
 
 type Sessao = {
@@ -285,11 +287,23 @@ const [tokenRecuperacao] = useState(() => {
           {sessao.usuario.perfil === "PROFESSOR" ? (
           <PainelProfessor token={sessao.token} />
         ) : (
-          <ListaDesempenhos token={sessao.token} />
+          <>
+            <ListaDesempenhos token={sessao.token} />
+            <LogsAuditoria token={sessao.token} />
+          </>
     )}
 
             </section>
           )}
+
+          <ExcluirConta
+            token={sessao.token}
+            perfil={sessao.usuario.perfil}
+            aoExcluir={() => {
+              sair();
+              setAviso("Sua conta foi excluída e seus dados pessoais foram removidos.");
+            }}
+          />
 
           <p>
             <button
