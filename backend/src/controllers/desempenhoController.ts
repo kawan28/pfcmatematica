@@ -120,6 +120,7 @@ export async function cadastrarDesempenho(
       where: {
         id: alunoId,
         perfil: "ALUNO",
+        excluidoEm: null,
         professorId: professor.id,
       },
     });

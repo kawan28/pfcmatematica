@@ -8,6 +8,7 @@ import rotasTermos from "./rotasTermos";
 import rotasReforco from "./rotasReforco";
 import rotasProfessor from "./rotasProfessor";
 import rotasDesempenho from "./rotasDesempenho";
+import rotasConta from "./rotasConta";
 
 const app = express();
 
@@ -30,6 +31,8 @@ app.use(rotasSenha);
 app.use(rotasAlunos);
 
 app.use(rotasDesempenho);
+
+app.use(rotasConta);
 
 app.get("/", (req, res) => {
   res.json({

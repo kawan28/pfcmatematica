@@ -41,7 +41,7 @@ export async function solicitarRecuperacao(
       where: { email: emailFormatado },
     });
 
-    if (!usuario) {
+    if (!usuario || usuario.excluidoEm) {
       res.json({ mensagem: mensagem });
       return;
     }

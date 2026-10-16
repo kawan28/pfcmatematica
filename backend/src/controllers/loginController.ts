@@ -34,7 +34,7 @@ export async function fazerLogin(
       where: { email: emailFormatado },
     });
 
-    if (!usuario) {
+    if (!usuario || usuario.excluidoEm) {
       res.status(401).json({
         mensagem: "E-mail ou senha incorretos.",
       });

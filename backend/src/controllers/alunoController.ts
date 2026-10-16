@@ -110,6 +110,7 @@ export async function listarAlunos(
       where: {
         professorId: professor.id,
         perfil: "ALUNO",
+        excluidoEm: null,
       },
       select: {
         id: true,
@@ -151,6 +152,7 @@ export async function redefinirSenhaAluno(
         where: {
           id: alunoId,
           perfil: "ALUNO",
+          excluidoEm: null,
           professorId: professor.id,
         },
         data: {

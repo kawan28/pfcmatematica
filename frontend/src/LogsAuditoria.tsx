@@ -21,6 +21,7 @@ const descricoesAcoes: Record<string, string> = {
   TROCAR_SENHA: "Trocou a senha",
   SOLICITAR_RECUPERACAO_SENHA: "Pediu a recuperação de senha",
   RECUPERAR_SENHA: "Recuperou a senha",
+  EXCLUIR_CONTA: "Excluiu a própria conta",
 };
 
 function descreverAcao(acao: string) {

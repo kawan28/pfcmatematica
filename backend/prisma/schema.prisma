@@ -50,6 +50,9 @@ recuperacaoExpiraEm  DateTime?
   termosAceitosEm DateTime?
   versaoTermos    String?
 
+  // Preenchido quando a conta é excluída e os dados pessoais são anonimizados.
+  excluidoEm DateTime?
+
   // Liga o aluno ao professor responsável.
   professorId Int?
   professor   Usuario?  @relation("ProfessorAlunos", fields: [professorId], references: [id])
