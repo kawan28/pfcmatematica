@@ -2,6 +2,10 @@ import type { Request, Response } from "express";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "../prisma";
+import {
+  anonimizarUsuario,
+  gerarSenhaDescartavel,
+} from "../services/exclusaoConta";
 
 export async function cadastrarAluno(
   req: Request,
@@ -193,6 +197,95 @@ export async function redefinirSenhaAluno(
   } catch {
     res.status(500).json({
       mensagem: "Não foi possível redefinir a senha do aluno.",
+    });
+  }
+}
+
+// O professor exclui um aluno dele, anonimizando os dados pessoais.
+export async function excluirAluno(
+  req: Request,
+  res: Response
+) {
+  const alunoId = Number(req.params.id);
+  const { senha } = req.body ?? {};
+
+  if (!Number.isInteger(alunoId) || alunoId <= 0) {
+    res.status(400).json({
+      mensagem: "Identificador do aluno inválido.",
+    });
+    return;
+  }
+
+  if (typeof senha !== "string" || senha === "") {
+    res.status(400).json({
+      mensagem: "Informe sua senha para confirmar a exclusão.",
+    });
+    return;
+  }
+
+  try {
+    const professorLogado = res.locals.usuario;
+
+    const professor = await prisma.usuario.findUnique({
+      where: { id: professorLogado.id },
+    });
+
+    if (!professor) {
+      res.status(401).json({
+        mensagem: "Faça login novamente.",
+      });
+      return;
+    }
+
+    const senhaCorreta = await bcrypt.compare(
+      senha,
+      professor.senhaHash
+    );
+
+    if (!senhaCorreta) {
+      res.status(400).json({
+        mensagem: "A senha está incorreta.",
+      });
+      return;
+    }
+
+    const senhaHash = await gerarSenhaDescartavel();
+
+    const excluido = await prisma.$transaction(async (banco) => {
+      // Só exclui se o aluno for deste professor.
+      const resultado = await anonimizarUsuario(
+        banco,
+        { id: alunoId, perfil: "ALUNO" },
+        senhaHash,
+        { professorId: professor.id }
+      );
+
+      if (resultado) {
+        await banco.logAuditoria.create({
+          data: {
+            usuarioId: professor.id,
+            acao: "EXCLUIR_ALUNO",
+            alvoId: alunoId,
+          },
+        });
+      }
+
+      return resultado;
+    });
+
+    if (!excluido) {
+      res.status(404).json({
+        mensagem: "Aluno não encontrado entre os seus alunos.",
+      });
+      return;
+    }
+
+    res.json({
+      mensagem: "Aluno excluído. Os dados pessoais dele foram removidos.",
+    });
+  } catch {
+    res.status(500).json({
+      mensagem: "Não foi possível excluir o aluno.",
     });
   }
 }
