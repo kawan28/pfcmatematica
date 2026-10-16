@@ -6,12 +6,12 @@ export async function listarAuditoria(
   res: Response
 ) {
   try {
-    const professor = res.locals.usuario;
+    const usuario = res.locals.usuario;
 
-    // Cada professor consulta suas próprias ações.
+    // Professores e alunos consultam somente as próprias ações.
     const registros = await prisma.logAuditoria.findMany({
       where: {
-        usuarioId: professor.id,
+        usuarioId: usuario.id,
       },
       orderBy: [
         { criadoEm: "desc" },

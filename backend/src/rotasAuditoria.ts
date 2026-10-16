@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {
   verificarLogin,
-  verificarProfessor,
   verificarTermos,
   verificarSenhaDefinitiva,
 } from "./autenticacao";
@@ -14,7 +13,6 @@ rotasAuditoria.get(
   verificarLogin,
   verificarSenhaDefinitiva,
   verificarTermos,
-  verificarProfessor,
   listarAuditoria
 );
 
